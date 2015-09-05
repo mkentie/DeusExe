@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Deus Exe Changelog</title>
+		<style type="text/css">
+		dl
+		{
+			margin:0;
+		}
+		dt
+		{
+			font-weight:bold;
+		}
+	</style>
+	</head>
+
+	<body>
+		<h2>Deus Exe Readme</h2>
+		<h3>Installation</h3>
+		<p>
+		Place the contents of the DeusExe zip file in your Deus Ex 'System' directory. Examples of this are 'C:\Deus Ex\System' and 'D:\Steam\steamapps\common\Deus Ex\System'.
+		</p>
+
+		<h3>New command-line options</h3>
+		<dl>
+			<dt>-skipdialog</dt>
+			<dd>Skips the launcher dialog and immediately starts the game.</dd>
+			<dt>-localdata</dt>
+			<dd>Uses the game directory, instead of 'Documents', for configuration data, save games, etc. Please make sure you have write permissions.</dd>
+		</dl>
+		<h3>Known issues / left to fix / todo. Unless marked as [Deus Exe], this is an issue with the original game.</h3>
+		<ul>
+			<li>[Deus Exe] If you start using the -localdata command-line option and then click the button to change renderers in the in-game options screen, Deus Exe will restart without using -localdata.</li>
+			<li>In full-screen mode, when opening a menu for the first time after a level switch, the mouse cursor will be positioned in the top-left corner.</li>
+			<li>Keyboard unresponsive after alt+tab in windowed mode</li>
+			<li>Todo: add borderless window fullscreen mode.</li>
+			<li>Todo: replace whole of windrv with something custom.</li>
+
+		</ul>
+		<h3>Changelog</h3>
+		<h4>Version 7 (august 29, 2015)</h4>
+		<ul>
+			<li>Resolution shown in configuration dialog upon opening it now matches windowed/fullscreen selection.</li>
+			<li>Thanks Sebastian Kaufel for discovering and sharing how to replace native script functions.</li>
+			<li>Added free disk space fix that doesn't require detoured.dll.</li>
+			<li>Added native UI scaling fix that no longer requires OTP patch. Has a manual scaling setting, and properly deals with resizing of the game window.</li>
+			<li>Added option to fix subtitles during cinematics for wider-than-16:9 resolutions.</li>
+			<li>Fixed issue with FPS limiter not being applied correctly.</li>
+			<li>Changed enable/disable behavior of configuration dialog options.</li>
+			<li>Switched to Visual Studio 2015, make sure to <a href="http://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x86.exe">update your runtimes</a>.</li>
+		</ul>
+		<h4>Version 6.2 (june 29, 2014)</h4>
+		<ul>
+			<li>The FPS limiter is now stored under the [Deus Exe] heading in the .ini file. It is also now set to 120 by default.</li>
+			<li>Since the first version, Deus Exe has forced the game to run on a single CPU (core). However, being that the game is generally CPU bound, and that OS/driver support for multiple CPUs has improved since then, the game now uses all processors by default. The launcher options still allow the game to be forced to run on a single CPU.</li>
+			<li>Fixed raw input mouse locking/unlocking for menus, which tripped up on cutscenes and dialogue sequences.</li>
+		</ul>
+		<h4>Version 6.1 (may 31, 2014)</h4>
+		<ul>
+			<li>Fixed rapidly clicking in full-screen mode with raw input enabled minimizing game.</li>
+		</ul>
+		<h4>Version 6 (may 18, 2014)</h4>
+		<ul>
+			<li>Switched to Visual Studio 2013, make sure to <a href="http://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x86.exe">update your runtimes</a>.</li>
+			<li><strong>Dropped Windows XP support.</strong></li>
+			<li>Executable marked as High DPI aware.</li>
+			<li>The INI file names in the launcher dialog are now clickable to easily edit the files. Note that any changes made will not be picked up by the game until next launch; changes made in the Deus Exe GUI will be visible in the files, though.</li>
+			<li>
+				Instead of the various separate FOV settings, the choices are now 'Default', 'Automatic' and 'Custom'.
+				<dl>
+					<dt>Default</dt>				
+					<dd>Uses game game default (75 for Deus Ex).</dd>
+					<dt>Automatic</dt>
+					<dd>Calculates optimal FOV depending on the game's resolution.</dd>
+					<dt>Custom</dt>
+					<dd>Custom FOV.</dd>
+				</dl>
+				Note that automatic mode sets the FOV for the selected resolution, it will not change the FOV upon in-game resolution changes.
+			</li>
+			<li>The resolution drop-down box is now populated with the resolutions supported by the primary monitor.</li>
+			<li>User.ini changes (FOV) now take the <code>USERINI</code> command-line option into account.</li>
+			<li>When starting the game for the first time, the desktop resolution is chosen for full-screen mode.</li>
+			<li>Instead of using a mix of DirectInput and raw input to combat mouse acceleration, raw input is now a dedicated mode. In this mode, standard Windows input is used for the menu mouse cursor, while the player camera uses the raw input API to be acceleration free.</li>
+			<li>Duplicate mouse cursor when playing in windowed mode now also removed in standard input mode.</li>
+			<li>Added LARGEADDRESSAWARE linker flag and set stack size to 2MB for Revision support.</li>
+			<li>Data Directories dialog is now tree-based.</li>
+			<li>
+				Localization file override support. Mods such as Shifter and its derivatives replace some game strings by overwriting DeusEx.int.
+				These .int files can now be stored in a mod's subdirectory and will be used if the user adds this directory in the 'Data Directories' dialog.
+				<br />
+				<br />
+				Three matters complicate all this:
+				<ol>
+					<li>The user running a localized version of the game, e.g. the language set to something other than 'int', such as 'det' for German. In that case, the game uses 'DeusEx.det' for its strings, with the original 'int' file as a fallback for when a string is not found in the 'det' file.</li>
+					<li>The ability to rename the game's executable; if DeusEx.exe is renamed to 'bla.exe', the executable will use 'bla.int' for its strings.</li>
+					<li>The fact that DeusEx.int also contains strings for the 'DeusEx.u' package, such as main menu text items. When DeusEx.exe is renamed, 'DeusEx.int' (or .det, etc.) will still be used for those.</li>
+				</ol>
+				<br />
+				In the end I settled on the following behavior:
+				<ol>
+					<li>The 'Data Directories' dialog only looks for .int files, so it won't recognize mods that for some odd reason do not include English strings.</li>
+					<li>
+						The replacement mechanism itself will reroute access to any localization file the game tries to access. This means the 'DeusEx.u' package will still use the 'DeusEx' localization file for its strings no matter the .exe name, just like before.						
+					</li>					
+					<li>
+						When the language is something other than 'int', access to both that language's localization file (e.g. 'DeusEx.det') and the '.int' file is rerouted, so localized mods work fine. If a string is not found in the mod's language-specific file, its .int file is used.
+					</li>
+					<li>Combining the above two rules, if Deus Exe is renamed to 'bla.exe' and the language is 'det', it reroutes access from 'System\bla.det' to 'Shifter\bla.det' and from 'System\bla.int' to 'Shifter\bla.int'. But explicit access to 'System\DeusEx.int' by the 'DeusEx.u' package is unchanged.</li>
+					<li>As a result of the localization file fallback mechanism, with the language set to e.g. 'det', if a mod only includes an .int file, and not a .det file, the .int file will be used for all its strings, which turns the game English but does allow the mod to use its text.
+					<li>
+						There's NO fallback for individual entries; if 'Shifter\DeusEx.int' does not contain a string, the original 'System\DeusEx.int' file is not queried; but then, the new file needs to include all strings anyway to be compatible with the original DeusEx.exe, which has no override mechanism for localization files at all.
+					</li>				
+				</ol>
+			</li>
+		</ul>
+
+		<h4>Version 5.3 (august 11, 2013)</h4>
+		<ul>
+			<li>If a custom RootWindow is found (installed by a mod), the configurator's GUI setting is disabled to preserve this.</li>
+		</ul>
+
+		<h4>Version 5.2 (april 13 2013)</h4>
+		<ul>
+			<li>Fixed the application failing to start when installed to the same drive as the 'Documents' directory (e.g. C:\).</li>
+		</ul>
+
+		<h4>Version 5.1 (march 29, 2013)</h4>
+		<ul>
+			<li>Fixed a directory creation issue if 'Documents\Deus Ex' did not already exist.</li>
+		</ul>
+
+		<h4>Version 5 (march 26, 2013)</h4>
+		<ul>
+			<li>Switched to Visual Studio 2012.</li>
+			<li>Fixed dedicated server mode / preferences / console.</li>
+			<li>Fixed ability to add corrupted item to 'Data Directories' listbox.</li>
+			<li>Server max tickrate is now taken into account.</li>
+			<li>Added some new prefab resolutions / FOVs.</li>
+			<li>Restored 'EditActor' command.</li>
+			<li>Completely cleaned up code, so who knows what's broken.</li>
+		</ul>
+
+		<h4>Version 4.3 (july 28, 2012)</h4>
+		<ul>
+			<li>Fixed data directories window not showing paths, only extensions, on Windows XP.</li>
+		</ul>
+
+		<h4>Version 4.2 (june 27, 2012)</h4>
+		<ul>
+			<li>Fixed a dumb mistake in the hard disk free space fix code. Negative free space when trying to save should be fixed now. (Thanks Myk)</li>
+		</ul>
+
+		<h4>Version 4.1 (january 29, 2012)</h4>
+		<ul>
+			<li>Fixed inability to overwrite/delete savegames.</li>
+			<li>Fixed data dir dialog not picking up .uax files.</li>
+		</ul>
+
+		<h4>Version 4 (january 11, 2012)</h4>
+		<ul>
+			<li>Added <code>-localdata</code> command-line option to disable usage of the 'My Documents' directory for files.</li>
+			<li>Game now uses original (default or existing) ini files instead of custom ones; fixes non-English versions of the game being turned English.</li>
+			<li>Added data directory dialog so mods can be more easily enabled/disabled and combined.</li>
+			<li>Mod support improved when using <code>INI/USERINI</code> command line options.</li>
+			<li>Fixed 'Preferences' dialog only being able to be summoned once.</li>
+		</ul>
+
+		<h4>Version 3 (august 2, 2011)</h4>
+		<ul>
+			<li>Added '-skipdialog' command-line option to skip the launcher dialog.</li>
+			<li>(Re) added dedicated server support ('-server' command-line option).</li>
+			<li>Removed admin-rights fix applier; packaged OTPUIFix dlls seperately as DeusEx.exe now itself uses Detoured.dll.</li>
+			<li>Fooled the game into thinking there's a max of 4GB free hard drive space; this prevents negative free space values in the save/load screens when running on an extremely large (TB+ partition). More importantly, this fixes an inability to save with the game compaining about too little free space.</li>
+			<li>Got rid of the original Windows mouse cursor in DirectInput (i.e. no mouse acceleration) mode. The two cursors ran at different speeds, making clicking outside of windowed games' areas a frequent occurrence. To get the cursor back, just alt+tab.</li>
+		</ul>
+
+		<h4>Version 2 (december 13, 2010)</h4>
+		<ul>
+			<li>Made FPS limit user configurable.</li>
+		</ul>
+
+		<h4>Version 1 (may 25, 2010)</h4>
+		<ul>
+			<li>Initial release.</li>
+		</ul>
+	</body>		
+</html>

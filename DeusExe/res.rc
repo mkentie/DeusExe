@@ -1,0 +1,232 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Dutch (Netherlands) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NLD)
+LANGUAGE LANG_DUTCH, SUBLANG_DUTCH
+#pragma code_page(1252)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON                ICON                    "DeusEx.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG1 DIALOGEX 0, 0, 331, 309
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_APPWINDOW
+CAPTION "Deus Exe Launcher"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "Play",IDC_PLAY,72,48,190,44
+    PUSHBUTTON      "Configure",IDC_CONFIG,71,96,190,44
+    PUSHBUTTON      "Data Directories",IDC_DATADIRS,72,144,190,44
+    PUSHBUTTON      "Exit",IDC_EXIT,72,192,190,44
+    CONTROL         "<a href=""http://www.kentie.net/article/dxguide"">kentie.net</a>",IDC_WEBSITE,
+                    "SysLink",LWS_USEVISUALSTYLE | WS_TABSTOP,6,294,60,12
+    CONTROL         "1",IDC_INIFILES1,"SysLink",LWS_USEVISUALSTYLE | LWS_RIGHT | WS_TABSTOP,264,270,60,12,WS_EX_TRANSPARENT | WS_EX_RIGHT
+    CONTROL         "2",IDC_INIFILES2,"SysLink",LWS_USEVISUALSTYLE | LWS_RIGHT | WS_TABSTOP,264,282,60,9,WS_EX_TRANSPARENT | WS_EX_RIGHT
+    CONTROL         IDC_BITMAP1,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE,0,0,331,40
+    RTEXT           "Version",IDC_VERSION,246,294,80,8,0,WS_EX_TRANSPARENT | WS_EX_RIGHT
+END
+
+IDD_FIXAPP DIALOGEX 0, 0, 441, 254
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Configuration"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "Use custom GUI scaling:",CHK_GUIFIX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,42,93,10
+    CONTROL         "Raw input (disables mouse acceleration for camera)",CHK_NOMOUSEACCEL,
+                    "Button",BS_AUTOCHECKBOX | BS_TOP | BS_MULTILINE | WS_TABSTOP,12,18,204,11
+    CONTROL         "Use single CPU",CHK_USESINGLECPU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,222,66,63,10
+    LTEXT           "Latency (40 default, try 60, 80, 100, etc.)",IDC_STATIC,222,18,144,8
+    EDITTEXT        TXT_LATENCY,366,18,36,12,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Use DirectSound",CHK_DIRECTSOUND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,222,30,112,11
+    COMBOBOX        COMBO_RENDERER,84,115,127,72,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        TXT_FPSLIMIT,84,132,36,12,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "16 bit color",RADIO_16BIT,"Button",BS_AUTORADIOBUTTON | WS_GROUP,228,120,55,11
+    CONTROL         "32 bit color",RADIO_32BIT,"Button",BS_AUTORADIOBUTTON,228,132,98,11
+    CONTROL         "Detail textures",CHK_DETAILTEX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,306,120,112,11
+    CONTROL         "Common:",RADIO_RESCOMMON,"Button",BS_AUTORADIOBUTTON | WS_GROUP,18,168,47,11
+    COMBOBOX        COMBO_RESOLUTION,66,168,120,95,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Custom:",RADIO_RESCUSTOM,"Button",BS_AUTORADIOBUTTON,18,186,41,11
+    EDITTEXT        TXT_RESX,66,186,36,12,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        TXT_RESY,118,186,36,12,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Full-screen mode",CHK_FULLSCREEN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,18,204,112,11
+    CONTROL         "Default ",RADIO_FOVDEFAULT,"Button",BS_AUTORADIOBUTTON | WS_GROUP,228,168,84,11
+    CONTROL         "Automatic (updates FOV on window resize)",RADIO_FOVAUTO,
+                    "Button",BS_AUTORADIOBUTTON,228,180,180,11
+    CONTROL         "Custom:",RADIO_FOVCUSTOM,"Button",BS_AUTORADIOBUTTON,228,192,42,11
+    EDITTEXT        TXT_FOV,276,192,54,12,ES_AUTOHSCROLL | ES_NUMBER
+    DEFPUSHBUTTON   "OK",IDOK,330,234,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,384,234,50,14
+    GROUPBOX        "Field of view",IDC_STATIC,222,156,204,66
+    GROUPBOX        "Resolution",IDC_STATIC,12,156,204,66
+    GROUPBOX        "Video options",IDC_STATIC,6,102,426,126
+    LTEXT           "Renderer",IDC_STATIC,12,114,30,9
+    LTEXT           "x",IDC_STATIC,108,190,8,8
+    GROUPBOX        "Quality",IDC_STATIC,222,108,204,42
+    LTEXT           "FPS limit (0 for off)",IDC_STATIC,12,132,72,9
+    GROUPBOX        "Audio",IDC_STATIC,216,6,216,42
+    GROUPBOX        "UI",IDC_STATIC,6,6,204,90
+    GROUPBOX        "Misc.",IDC_STATIC,216,54,216,42
+    COMBOBOX        COMBO_GUISCALING,108,42,48,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Widescreen cinematic subtitle fix",CHK_SUBTITLEFIX,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,30,120,10
+END
+
+IDD_DATADIRS DIALOGEX 0, 0, 340, 297
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Data Directories"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_DIRTREE,"SysTreeView32",TVS_HASBUTTONS | TVS_LINESATROOT | TVS_DISABLEDRAGDROP | TVS_SHOWSELALWAYS | TVS_FULLROWSELECT | WS_BORDER | WS_HSCROLL | WS_TABSTOP,7,7,269,240
+    PUSHBUTTON      "Move up",IDC_UP,282,95,54,30,WS_DISABLED
+    PUSHBUTTON      "Move down",IDC_DOWN,282,132,54,30,WS_DISABLED
+    DEFPUSHBUTTON   "OK",IDOK,228,276,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,282,276,50,14
+    LTEXT           "Items higher up in the list override lower ones, just like in the ini file.\nLocalization (.int) files are used from the highest-priority *.u directory.",IDC_STATIC,6,252,276,18
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 7,0,0,0
+ PRODUCTVERSION 7,0,0,0
+ FILEFLAGSMASK 0x17L
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "041304b0"
+        BEGIN
+            VALUE "CompanyName", "Marijn Kentie"
+            VALUE "FileDescription", "Deus Ex"
+            VALUE "FileVersion", "7.0.0.0"
+            VALUE "InternalName", "DeusExe"
+            VALUE "LegalCopyright", "Copyright (C) 2015 Marijn Kentie"
+            VALUE "OriginalFilename", "DeusEx.exe"
+            VALUE "ProductName", "Deus Exe"
+            VALUE "ProductVersion", "7.0.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x413, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        TOPMARGIN, 6
+        BOTTOMMARGIN, 302
+    END
+
+    IDD_FIXAPP, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 439
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 245
+    END
+
+    IDD_DATADIRS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 336
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 290
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDC_BITMAP1             BITMAP                  "deusex.bmp"
+#endif    // Dutch (Netherlands) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

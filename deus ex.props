@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="UserMacros">
+    <GAMENAME>DeusEx</GAMENAME>
+    <GAMEDIR>d:\steam\steamapps\common\deus ex</GAMEDIR>
+    <GAMEEXE>deusex.exe</GAMEEXE>
+    <FRIENDLYGAMENAME>Deus Ex</FRIENDLYGAMENAME>
+  </PropertyGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <TargetName>
+    </TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>DEUSEX;GAMENAME=L"$(GAMENAME)";FRIENDLYGAMENAME=L"$(FRIENDLYGAMENAME)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <OutputFile>
+      </OutputFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="GAMENAME">
+      <Value>$(GAMENAME)</Value>
+    </BuildMacro>
+    <BuildMacro Include="GAMEDIR">
+      <Value>$(GAMEDIR)</Value>
+    </BuildMacro>
+    <BuildMacro Include="GAMEEXE">
+      <Value>$(GAMEEXE)</Value>
+    </BuildMacro>
+    <BuildMacro Include="FRIENDLYGAMENAME">
+      <Value>$(FRIENDLYGAMENAME)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>
