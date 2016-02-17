@@ -69,11 +69,66 @@ float Misc::GetDefaultFOV()
 
 float Misc::CalcFOV(const size_t iResX, const size_t iResY)
 {
-    static const float fDeg2Rad = static_cast<float>(M_PI) / 180.0f;
-    static const float fDefaultAspect = 4.0f / 3.0f;
+    constexpr float fDeg2Rad = static_cast<float>(M_PI) / 180.0f;
+    constexpr float fDefaultAspect = 4.0f / 3.0f;
     const float fAspect = static_cast<float>(iResX) / iResY;
 
     const float fFov = atanf(tanf(0.5f*GetDefaultFOV()*fDeg2Rad)*(fAspect / fDefaultAspect)) / fDeg2Rad*2.0f;
     return fFov;
 }
 
+void Misc::CenterWindowOnMonitor(const HWND hWnd, const HMONITOR hMonitor)
+{
+    assert(hWnd);
+    assert(hMonitor);
+
+    MONITORINFO mi;
+    mi.cbSize = sizeof(mi);
+    GetMonitorInfo(hMonitor, &mi);
+    RECT r;
+    GetWindowRect(hWnd, &r);
+
+    const int iW = r.right - r.left;
+    const int iH = r.bottom - r.top;
+
+    //Center window on monitor
+    const int iX = (mi.rcMonitor.left + mi.rcMonitor.right - iW) / 2;
+    const int iY = (mi.rcMonitor.top + mi.rcMonitor.bottom - iH) / 2;
+    MoveWindow(hWnd, iX, iY, iW, iH, FALSE);
+#ifdef _DEBUG
+    //Check window is still same size
+    RECT r2;
+    GetWindowRect(hWnd, &r2);
+    assert(r.right - r.left == r2.right - r2.left);
+    assert(r.bottom - r.top == r2.bottom - r2.top);
+#endif
+}
+
+void Misc::SetBorderlessFullscreen(const HWND hWnd, const bool bEnable)
+{
+    assert(hWnd);
+
+    LONG_PTR Style = GetWindowLongPtr(hWnd, GWL_STYLE);
+
+    if (bEnable)
+    {
+        const HMONITOR hM = MonitorFromWindow(hWnd, 0);
+
+        MONITORINFO mi;
+        mi.cbSize = sizeof(mi);
+        GetMonitorInfo(hM, &mi);
+
+        Style &= ~(WS_CAPTION | WS_THICKFRAME);
+        SetWindowLongPtr(hWnd, GWL_STYLE, Style);
+
+        const int iX = mi.rcMonitor.right - mi.rcMonitor.left;
+        const int iY = mi.rcMonitor.bottom - mi.rcMonitor.top;
+        SetWindowPos(hWnd, NULL, mi.rcMonitor.left, mi.rcMonitor.top, iX, iY, SWP_FRAMECHANGED);
+    }
+    else
+    {
+        Style |= (WS_CAPTION | WS_THICKFRAME);
+        SetWindowLongPtr(hWnd, GWL_STYLE, Style);
+        SetWindowPos(hWnd, NULL, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_FRAMECHANGED);
+    }
+}

@@ -6,37 +6,229 @@
 #include "Fixapp.h"
 #include "ExecHook.h"
 #include "NativeHooks.h"
+#include "Launcher.h"
 
 //Do not put before stdafx.h
 #pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 extern "C" {wchar_t GPackage[64] = L"Launch"; } //Will be set to exe name later
 
-//Unreal engine framework classes
-static LARGE_INTEGER s_iPerfCounterFreq;
-static float s_fFPSLimit; //Because GetMaxTickRate() is float
-static UBOOL s_bRawInput;
-static HWND s_hWnd;
-static UBOOL s_bAutoFov;
-static size_t s_iSizeX;
-static size_t s_iSizeY;
-static UViewport* s_pViewPort; //If user closes window, viewport disappears before we get WM_QUIT
-static bool s_bPrevInMenu;
-
-static void ApplyAutoFOV(const size_t iSizeX, const size_t iSizeY)
+INT WINAPI WinMain(HINSTANCE /*hInInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, INT /*nCmdShow*/)
 {
-    assert(s_iSizeX != iSizeX || s_iSizeY != iSizeY);
-    assert(s_pViewPort);
+    INITCOMMONCONTROLSEX CommonControlsInfo;
+    CommonControlsInfo.dwSize = sizeof(INITCOMMONCONTROLSEX);
+    CommonControlsInfo.dwICC = ICC_TREEVIEW_CLASSES | ICC_LINK_CLASS;
+    if (InitCommonControlsEx(&CommonControlsInfo) != TRUE)
+    {
+        return EXIT_FAILURE;
+    }
+
+    appStrcpy(GPackage, appPackage());
+
+    //Init core
+    FMallocWindows Malloc;
+    FOutputDeviceFile Log;
+    FOutputDeviceWindowsError Error;
+    FFeedbackContextWindows Warn;
+
+    //If -localdata command line option present, don't use user documents for data; can't use appCmdLine() yet.
+    std::unique_ptr<FFileManagerDeusExe> pFileManager(wcswcs(GetCommandLine(), L" -localdata") == nullptr ? new FFileManagerDeusExeUserDocs : new FFileManagerDeusExe);
+
+    appInit(GPackage, GetCommandLine(), &Malloc, &Log, &Error, &Warn, pFileManager.get(), FConfigCacheIni::Factory, 1);
+    GLog->Logf(L"Deus Exe: version %s.", Misc::GetVersion());
+
+    pFileManager->AfterCoreInit();
+
+    GIsStarted = 1;
+    GIsServer = 1;
+    GIsClient = !ParseParam(appCmdLine(), L"SERVER");
+    GIsEditor = 0;
+    GIsScriptable = 1;
+    GLazyLoad = !GIsClient;
+
+    {
+        CLauncher Launcher;
+    }
+
+    //Uninit
+    appPreExit();
+    appExit();
+    GIsStarted = 0;
+
+    return EXIT_SUCCESS;
+}
+
+CLauncher::CLauncher()
+{
+    if (!Misc::SetDEP(0)) //Disable DEP for process (also need NXCOMPAT=NO); needed for Galaxy.dll
+    {
+        GLog->Log(L"Failed to set process DEP flags.");
+    }
+    if (QueryPerformanceFrequency(&m_iPerfCounterFreq) == FALSE)
+    {
+        GError->Log(L"Failed to query performance counter.");
+    }
+
+    int iFirstRun = 0;
+    GConfig->GetInt(L"FirstRun", L"FirstRun", iFirstRun);
+    const bool bFirstRun = iFirstRun < ENGINE_VERSION;
+    if (bFirstRun) //Select better default options
+    {
+        GConfig->SetString(L"Engine.Engine", L"GameRenderDevice", L"D3DDrv.D3DRenderDevice");
+        GConfig->SetString(L"WinDrv.WindowsClient", L"FullscreenColorBits", L"32");
+        wchar_t szTemp[1024];
+        _itow_s(GetSystemMetrics(SM_CXSCREEN), szTemp, 10);
+        GConfig->SetString(L"WinDrv.WindowsClient", L"FullscreenViewportX", szTemp);
+        _itow_s(GetSystemMetrics(SM_CYSCREEN), szTemp, 10);
+        GConfig->SetString(L"WinDrv.WindowsClient", L"FullscreenViewportY", szTemp);
+    }
+
+    //Show options dialog
+    if (ParseParam(appCmdLine(), L"changevideo") || bFirstRun)
+    {
+        CFixApp FixApp;
+        FixApp.Show(NULL);
+        if (bFirstRun)
+        {
+            GConfig->SetInt(L"FirstRun", L"FirstRun", ENGINE_VERSION);
+        }
+    }
+
+    //Show launcher dialog
+    HMONITOR hMonitor = NULL;
+
+    const auto DoLauncherDialog = [&hMonitor]
+    {
+        CLauncherDialog LD;
+        const auto bRet = LD.Show(NULL);
+        hMonitor = LD.GetChildWindowMonitor();
+        return bRet;
+    };
+
+    if (!GIsClient || ParseParam(appCmdLine(), TEXT("skipdialog")) || DoLauncherDialog()) //Here the game actually starts
+    {
+        LoadSettings();
+
+        static_cast<FFileManagerDeusExe*>(GFileManager)->OnGameStart();
+
+        if (m_bUseSingleCPU)
+        {
+            if (SetProcessAffinityMask(GetCurrentProcess(), 0x1) == FALSE) //Force on single CPU
+            {
+                GLog->Log(L"Failed to set process affinity.");
+            }
+        }
+
+        if (m_bRawInput) //If raw input is enabled, disable DirectInput
+        {
+            GConfig->SetBool(L"WinDrv.WindowsClient", L"UseDirectInput", FALSE);
+        }
+
+        if (m_bBorderlessFullscreenWindow) //In borderless mode, disable normal full screen
+        {
+            GConfig->SetBool(L"WinDrv.WindowsClient", L"StartupFullscreen", FALSE);
+        }
+
+        //Init windowing
+        InitWindowing();
+
+        //Create log window
+        const std::unique_ptr<WLog> LogWindowPtr = std::make_unique<WLog>(static_cast<FOutputDeviceFile*>(GLog)->Filename, static_cast<FOutputDeviceFile*>(GLog)->LogAr, L"GameLog");
+        GLogWindow = LogWindowPtr.get(); //Yup...
+        GLogWindow->OpenWindow(!GIsClient, 0);
+        GLogWindow->Log(NAME_Title, LocalizeGeneral("Start"));
+
+        GExec = this;
+
+        //Init engine
+        UClass* const pEngineClass = LoadClass<UGameEngine>(nullptr, L"ini:Engine.Engine.GameEngine", nullptr, LOAD_NoFail, nullptr);
+        assert(pEngineClass);
+        UEngine* const pEngine = ConstructObject<UEngine>(pEngineClass);
+        assert(pEngine);
+        if (!pEngine)
+        {
+            GError->Log(L"Engine initialization failed.");
+        }
+
+        pEngine->Init();
+
+        GLogWindow->SetExec(pEngine); //If we directly set GExec, only our custom commands work
+        GLogWindow->Log(NAME_Title, LocalizeGeneral("Run"));
+
+        //Find window handle
+        if (GIsClient)
+        {
+            if (pEngine->Client && pEngine->Client->Viewports.Num() > 0)
+            {
+                m_pViewPort = pEngine->Client->Viewports(0);
+                m_hWnd = static_cast<const HWND>(m_pViewPort->GetWindow());
+            }
+            else
+            {
+                GLog->Log(L"Unable to get viewport.");
+            }
+        }
+
+        //Move window to launcher's monitor
+        if (hMonitor != NULL && m_hWnd)
+        {
+            Misc::CenterWindowOnMonitor(m_hWnd, hMonitor);
+        }
+
+        if (m_bBorderlessFullscreenWindow)
+        {
+            Misc::SetBorderlessFullscreen(m_hWnd, true);
+            m_bInBorderlessFullscreenWindow = true;
+        }
+
+        //Initialize raw input
+        if (m_bRawInput && m_hWnd)
+        {
+            if (!RegisterRawInput(m_hWnd))
+            {
+                GError->Log(L"Raw input: Failed to register raw input device.");
+            }
+        }
+
+        if (GIsClient && m_bAutoFov)
+        {
+            RECT r;
+            GetClientRect(m_hWnd, &r);
+            int iSizeX = r.right - r.left;
+            int iSizeY = r.bottom - r.top;
+            ApplyAutoFOV(iSizeX, iSizeY);
+        }
+
+        //Initialize native hooks
+        CNativeHooks NativeHooks(PROJECTNAME);
+
+        //Main loop
+        GIsRunning = 1;
+        if (!GIsRequestingExit)
+        {
+            MainLoop(pEngine);
+        }
+        GIsRunning = 0;
+
+        GLogWindow->Log(NAME_Title, LocalizeGeneral("Exit"));
+    }
+
+}
+
+void CLauncher::ApplyAutoFOV(const size_t iSizeX, const size_t iSizeY)
+{
+    assert(m_iSizeX != iSizeX || m_iSizeY != iSizeY);
+    assert(m_pViewPort);
     const float fFOV = Misc::CalcFOV(iSizeX, iSizeY);
     wchar_t szCmd[12];
     swprintf_s(szCmd, L"fov %6.3f", fFOV);
 
-    s_pViewPort->Exec(szCmd);
-    s_iSizeX = iSizeX;
-    s_iSizeY = iSizeY;
+    m_pViewPort->Exec(szCmd);
+    m_iSizeX = iSizeX;
+    m_iSizeY = iSizeY;
 }
 
-static void MainLoop(UEngine* const pEngine)
+void CLauncher::MainLoop(UEngine* const pEngine)
 {
     assert(pEngine);
 
@@ -50,10 +242,10 @@ static void MainLoop(UEngine* const pEngine)
     {
         LARGE_INTEGER iTime;
         QueryPerformanceCounter(&iTime);
-        const float fDeltaTime = (iTime.QuadPart - iOldTime.QuadPart) / static_cast<float>(s_iPerfCounterFreq.QuadPart);
+        const float fDeltaTime = (iTime.QuadPart - iOldTime.QuadPart) / static_cast<float>(m_iPerfCounterFreq.QuadPart);
 
         //Lock game update speed to fps limit
-        if((s_fFPSLimit == 0.0f || fDeltaTime >= 1.0f / s_fFPSLimit) && (pEngine->GetMaxTickRate() == 0.0f || fDeltaTime >= 1.0f / pEngine->GetMaxTickRate()))
+        if((m_fFPSLimit == 0.0f || fDeltaTime >= 1.0f / m_fFPSLimit) && (pEngine->GetMaxTickRate() == 0.0f || fDeltaTime >= 1.0f / pEngine->GetMaxTickRate()))
         {
             pEngine->Tick(fDeltaTime);
             if(GWindowManager)
@@ -65,29 +257,29 @@ static void MainLoop(UEngine* const pEngine)
         
         if(pEngine->Client->Viewports.Num() == 0) //If user closes window, viewport disappears before we get WM_QUIT
         {
-            s_pViewPort = nullptr;
+            m_pViewPort = nullptr;
         }
 
         POINT CursorPos;
         GetCursorPos(&CursorPos);
-        const bool bMouseOverWindow = WindowFromPoint(CursorPos) == s_hWnd;
-        const bool bHasFocus = GetFocus() == s_hWnd;
-        if(s_pViewPort)
+        const bool bMouseOverWindow = WindowFromPoint(CursorPos) == m_hWnd;
+        const bool bHasFocus = GetFocus() == m_hWnd;
+        if(m_pViewPort)
         {
-            assert(s_hWnd);
+            assert(m_hWnd);
 
             RECT rClientArea;
-            GetClientRect(s_hWnd, &rClientArea);
+            GetClientRect(m_hWnd, &rClientArea);
 
             //PeekMessage() doesn't get WM_SIZE
             //Default/desired FOV check is so we don't change FOV while zoomed in
-            if(s_bAutoFov && s_pViewPort->Actor->DesiredFOV == s_pViewPort->Actor->DefaultFOV)
+            if (m_bAutoFov && m_pViewPort->Actor->DesiredFOV == m_pViewPort->Actor->DefaultFOV)
             {
-                const size_t iSizeX = static_cast<size_t>(s_pViewPort->SizeX);
-                const size_t iSizeY = static_cast<size_t>(s_pViewPort->SizeY);
+                const size_t iSizeX = static_cast<size_t>(m_pViewPort->SizeX);
+                const size_t iSizeY = static_cast<size_t>(m_pViewPort->SizeY);
 
                 //Handle auto FOV
-                if(s_iSizeX != iSizeX  || s_iSizeY != iSizeY)
+                if(m_iSizeX != iSizeX  || m_iSizeY != iSizeY)
                 {
                     ApplyAutoFOV(iSizeX, iSizeY);
                 }
@@ -125,29 +317,29 @@ static void MainLoop(UEngine* const pEngine)
             11. In two-monitor fullscreen make sure mouse can't move outside of monitor
             */
 
-            const APlayerPawnExt* const pPlayer = static_cast<APlayerPawnExt*>(s_pViewPort->Actor);
+            const APlayerPawnExt* const pPlayer = static_cast<APlayerPawnExt*>(m_pViewPort->Actor);
             assert(pPlayer);
             XRootWindow* const pRoot = static_cast<XRootWindow*>(pPlayer->rootWindow);
             assert(pRoot);
 
             const bool bInMenu = pRoot->IsMouseGrabbed()!=0;
 
-            if (s_bRawInput && s_pViewPort && s_pViewPort->IsFullscreen())
+            if (m_bRawInput && m_pViewPort && m_pViewPort->IsFullscreen())
             {
-                if (bInMenu && !s_bPrevInMenu) //Fixes that in fullscreen mode, windows mouse cursor pos isn't matched to DX menu cursor
+                if (bInMenu && !m_bPrevInMenu) //Fixes that in fullscreen mode, windows mouse cursor pos isn't matched to DX menu cursor
                 {
                     float fX, fY;
                     pRoot->GetRootCursorPos(&fX, &fY);
                     POINT p{static_cast<int>(fX), static_cast<int>(fY)};
-                    ClientToScreen(s_hWnd, &p);
+                    ClientToScreen(m_hWnd, &p);
                     SetCursorPos(p.x, p.y);
                 }
                 ClipCursor(&rClientArea); //Fixed being able to move cursor outside of fullscreen game on dual monitor systems
             }
-            s_bPrevInMenu = bInMenu;
+            m_bPrevInMenu = bInMenu;
 
-            const bool bMouseInClientRect = ScreenToClient(s_hWnd, &CursorPos) && PtInRect(&rClientArea, CursorPos); //This makes sure resize cursor isn't hidden
-            const bool bCaptured = GetCapture() == s_hWnd;
+            const bool bMouseInClientRect = ScreenToClient(m_hWnd, &CursorPos) && PtInRect(&rClientArea, CursorPos); //This makes sure resize cursor isn't hidden
+            const bool bCaptured = GetCapture() == m_hWnd;
             if (bMouseInClientRect && (bMouseOverWindow || bCaptured)) //Want to show cursor when over preferences window when we don't have focus, but not when it's under the window if we do
             {
                 while(ShowCursor(FALSE) > 0); //Get rid of double mouse cursors when game doesn't clip it
@@ -170,14 +362,14 @@ static void MainLoop(UEngine* const pEngine)
                 break;
 
             case WM_MOUSEMOVE:
-                if (s_pViewPort && s_bRawInput)
+                if (m_pViewPort && m_bRawInput)
                 {
                     if (bMouseOverWindow) //Because preferences window defers mousemove calls to us, somehow
                     {
                         //Use WM_MOUSEMOVE to control menu cursor
                         const int iXPos = GET_X_LPARAM(Msg.lParam);
                         const int iYPos = GET_Y_LPARAM(Msg.lParam);
-                        pEngine->MousePosition(s_pViewPort, 0, static_cast<float>(iXPos), static_cast<float>(iYPos));
+                        pEngine->MousePosition(m_pViewPort, 0, static_cast<float>(iXPos), static_cast<float>(iYPos));
                     }
                     bSkipMessage = true;
                 }
@@ -186,7 +378,7 @@ static void MainLoop(UEngine* const pEngine)
             case WM_INPUT:
             {
                 //Use raw input to control camera
-                if (s_pViewPort && bHasFocus)
+                if (m_pViewPort && bHasFocus)
                 {
                     RAWINPUT raw;
                     UINT rawSize = sizeof(raw);
@@ -196,12 +388,31 @@ static void MainLoop(UEngine* const pEngine)
                     const float fDeltaY = static_cast<float>(raw.data.mouse.lLastY);
                     if(fDeltaX != 0.0f)
                     {
-                        pEngine->InputEvent(s_pViewPort, EInputKey::IK_MouseX, EInputAction::IST_Axis, fDeltaX);
+                        pEngine->InputEvent(m_pViewPort, EInputKey::IK_MouseX, EInputAction::IST_Axis, fDeltaX);
                     }
                     if(fDeltaY != 0.0f)
                     {
-                        pEngine->InputEvent(s_pViewPort, EInputKey::IK_MouseY, EInputAction::IST_Axis, -fDeltaY);
+                        pEngine->InputEvent(m_pViewPort, EInputKey::IK_MouseY, EInputAction::IST_Axis, -fDeltaY);
                     }
+
+                    if (raw.data.mouse.ulButtons & RI_MOUSE_BUTTON_4_UP)
+                    {
+                        pEngine->InputEvent(m_pViewPort, EInputKey::IK_Unknown05, EInputAction::IST_Release);
+                    }
+                    else if (raw.data.mouse.ulButtons & RI_MOUSE_BUTTON_4_DOWN)
+                    {
+                        pEngine->InputEvent(m_pViewPort, EInputKey::IK_Unknown05, EInputAction::IST_Press);
+                    }
+
+                    if (raw.data.mouse.ulButtons & RI_MOUSE_BUTTON_5_UP)
+                    {
+                        pEngine->InputEvent(m_pViewPort, EInputKey::IK_Unknown06, EInputAction::IST_Release);
+                    }
+                    else if (raw.data.mouse.ulButtons & RI_MOUSE_BUTTON_5_DOWN)
+                    {
+                        pEngine->InputEvent(m_pViewPort, EInputKey::IK_Unknown06, EInputAction::IST_Press);
+                    }
+
                     bSkipMessage = true;
                 }
             }
@@ -218,183 +429,44 @@ static void MainLoop(UEngine* const pEngine)
 
 }
 
-static bool DoLauncherDialog()
+void CLauncher::LoadSettings()
 {
-    CLauncherDialog LD;
-    return LD.Show(NULL);
+    assert(GConfig);
+    int iFPSLimit;
+    GConfig->GetInt(PROJECTNAME, L"FPSLimit", iFPSLimit);
+    m_fFPSLimit = static_cast<float>(iFPSLimit);
+
+    GConfig->GetBool(PROJECTNAME, L"RawInput", m_bRawInput);
+    GConfig->GetBool(PROJECTNAME, L"UseAutoFOV", m_bAutoFov);
+    GConfig->GetBool(PROJECTNAME, L"BorderlessFullscreenWindow", m_bBorderlessFullscreenWindow);
+    GConfig->GetBool(PROJECTNAME, L"UseSingleCPU", m_bUseSingleCPU);
 }
 
-INT WINAPI WinMain(HINSTANCE /*hInInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /*lpCmdLine*/, INT /*nCmdShow*/)
+UBOOL CLauncher::Exec(const TCHAR * Cmd, FOutputDevice & Ar)
 {
-    INITCOMMONCONTROLSEX CommonControlsInfo;
-    CommonControlsInfo.dwSize = sizeof(INITCOMMONCONTROLSEX);
-    CommonControlsInfo.dwICC = ICC_TREEVIEW_CLASSES | ICC_LINK_CLASS;
-    if(InitCommonControlsEx(&CommonControlsInfo) != TRUE)
+    if (ParseCommand(&Cmd, TEXT("ToggleFullScreen")))
     {
-        return EXIT_FAILURE;
+        assert(m_pViewPort);
+        if (m_bBorderlessFullscreenWindow) //In borderless mode, prevent switch to 'real' fullscreen
+        {
+            Misc::SetBorderlessFullscreen(m_hWnd, !m_bInBorderlessFullscreenWindow);
+            m_bInBorderlessFullscreenWindow = !m_bInBorderlessFullscreenWindow;
+
+            return TRUE;
+        }
+
+        return FALSE;
     }
-
-    appStrcpy(GPackage, appPackage());
-
-    //Init core
-    FMallocWindows Malloc;
-    FOutputDeviceFile Log;
-    FOutputDeviceWindowsError Error;
-    FFeedbackContextWindows Warn;
-
-    //If -localdata command line option present, don't use user documents for data; can't use appCmdLine() yet.
-    std::unique_ptr<FFileManagerDeusExe> pFileManager(wcswcs(GetCommandLine(), L" -localdata") == nullptr ? new FFileManagerDeusExeUserDocs : new FFileManagerDeusExe);
-
-    appInit(GPackage, GetCommandLine(), &Malloc, &Log, &Error, &Warn, pFileManager.get(), FConfigCacheIni::Factory, 1);
-    GLog->Logf(L"Deus Exe: version %s.", Misc::GetVersion());
-
-    pFileManager->AfterCoreInit();
-
-    GIsStarted = 1;
-    GIsServer = 1;
-    GIsClient = !ParseParam(appCmdLine(), L"SERVER");
-    GIsEditor = 0;
-    GIsScriptable = 1;
-    GLazyLoad = !GIsClient;
-
-    assert(GConfig);
-
-    if(!Misc::SetDEP(0)) //Disable DEP for process (also need NXCOMPAT=NO); needed for Galaxy.dll
+    else if (ParseCommand(&Cmd, TEXT("SetRes")))
     {
-        Log.Log(L"Failed to set process DEP flags.");
+        if (m_bInBorderlessFullscreenWindow) //Block resolution changes in borderless fullscreen mode
+        {
+            return TRUE;
+        }
+        return FALSE;
     }
-    if(QueryPerformanceFrequency(&s_iPerfCounterFreq) == FALSE)
+    else
     {
-        Error.Log(L"Failed to query performance counter.");
+        return FExecHook::Exec(Cmd, Ar);
     }
-
-    int iFirstRun = 0;
-    GConfig->GetInt(L"FirstRun", L"FirstRun", iFirstRun);
-    const bool bFirstRun = iFirstRun < ENGINE_VERSION;
-    if(bFirstRun) //Select better default options
-    {
-        GConfig->SetString(L"Engine.Engine", L"GameRenderDevice", L"D3DDrv.D3DRenderDevice");
-        GConfig->SetString(L"WinDrv.WindowsClient", L"FullscreenColorBits", L"32");
-        wchar_t szTemp[1024];
-        _itow_s(GetSystemMetrics(SM_CXSCREEN), szTemp, 10);
-        GConfig->SetString(L"WinDrv.WindowsClient", L"FullscreenViewportX", szTemp);
-        _itow_s(GetSystemMetrics(SM_CYSCREEN), szTemp, 10);
-        GConfig->SetString(L"WinDrv.WindowsClient", L"FullscreenViewportY", szTemp);
-    }
-
-    //Show launcher dialog
-    if(ParseParam(appCmdLine(), L"changevideo") || bFirstRun)
-    {
-        CFixApp FixApp;
-        FixApp.Show(NULL);
-        if(bFirstRun)
-        {
-            GConfig->SetInt(L"FirstRun", L"FirstRun", ENGINE_VERSION);
-        }
-    }
-    if(!GIsClient || ParseParam(appCmdLine(), TEXT("skipdialog")) || DoLauncherDialog()) //Here the game actually starts
-    {
-        pFileManager->OnGameStart();
-
-        BOOL bUseSingleCPU = FALSE;
-        GConfig->GetBool(PROJECTNAME, L"UseSingleCPU", bUseSingleCPU);
-        if (bUseSingleCPU)
-        {
-            if (SetProcessAffinityMask(GetCurrentProcess(), 0x1) == FALSE) //Force on single CPU
-            {
-                Log.Log(L"Failed to set process affinity.");
-            }
-        }
-
-        GConfig->GetBool(PROJECTNAME, L"RawInput", s_bRawInput);
-        if(s_bRawInput) //If raw input is enabled, disable DirectInput
-        {
-            GConfig->SetBool(L"WinDrv.WindowsClient", L"UseDirectInput", FALSE);
-        }
-
-        //Init windowing
-        InitWindowing();
-
-        //Create log window
-        const std::unique_ptr<WLog> LogWindowPtr = std::make_unique<WLog>(Log.Filename, Log.LogAr, L"GameLog");
-        GLogWindow = LogWindowPtr.get(); //Yup...
-        GLogWindow->OpenWindow(!GIsClient, 0);
-        GLogWindow->Log(NAME_Title, LocalizeGeneral("Start"));
-
-        //Create command processor, fixes dedicated server preferences
-        FExecHook ExecHook;
-        GExec = &ExecHook;
-
-        //Init engine
-        UClass* const pEngineClass = LoadClass<UGameEngine>(nullptr, L"ini:Engine.Engine.GameEngine", nullptr, LOAD_NoFail, nullptr);
-        assert(pEngineClass);
-        UEngine* const pEngine = ConstructObject<UEngine>(pEngineClass);
-        assert(pEngine);
-        if(!pEngine)
-        {
-            Error.Log(L"Engine initialization failed.");
-        }
-
-        pEngine->Init();
-
-        GLogWindow->SetExec(pEngine); //If we directly set GExec, only our custom commands work
-        GLogWindow->Log(NAME_Title, LocalizeGeneral("Run"));
-
-        //Find window handle
-        if(GIsClient)
-        {
-            if(pEngine->Client && pEngine->Client->Viewports.Num() > 0)
-            {
-                s_pViewPort = pEngine->Client->Viewports(0);
-                s_hWnd = static_cast<const HWND>(s_pViewPort->GetWindow());
-            }
-            else
-            {
-                Log.Log(L"Unable to get viewport.");
-            }
-        }
-
-        //Initialize raw input
-        if(s_bRawInput && s_hWnd)
-        {
-            if(!RegisterRawInput(s_hWnd))
-            {
-                Error.Log(L"Raw input: Failed to register raw input device.");
-            }
-        }
-
-        int iFPSLimit;
-        GConfig->GetInt(PROJECTNAME, L"FPSLimit", iFPSLimit);
-        s_fFPSLimit = static_cast<float>(iFPSLimit);
-
-        GConfig->GetBool(PROJECTNAME, L"UseAutoFOV", s_bAutoFov);
-        if(GIsClient && s_bAutoFov)
-        {
-            RECT r;
-            GetClientRect(s_hWnd, &r);
-            int iSizeX = r.right - r.left;
-            int iSizeY = r.bottom - r.top;
-            ApplyAutoFOV(iSizeX, iSizeY);
-        }
-
-        //Initialize native hooks
-        CNativeHooks NativeHooks(PROJECTNAME);
-
-        //Main loop
-        GIsRunning = 1;
-        if(!GIsRequestingExit)
-        {
-            MainLoop(pEngine);
-        }
-        GIsRunning = 0;
-
-        GLogWindow->Log(NAME_Title, LocalizeGeneral("Exit"));
-    }
-
-    //Uninit
-    appPreExit();
-    appExit();
-    GIsStarted = 0;
-
-    return EXIT_SUCCESS;
 }

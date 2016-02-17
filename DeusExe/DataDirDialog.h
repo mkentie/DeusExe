@@ -39,7 +39,7 @@ private:
 
     // This is used so the top-level dirs (Shifter, HDTP) are first added to the list. However, their contents are added in the order they're on disk.
     // This prevents the order of sub-items from shifting depending on in which order they were added.
-    bool m_bAddTopLevelDirsOnly;
+    bool m_bAddTopLevelDirsOnly = true;
 
     class CCaseInsensitiveHash
     {

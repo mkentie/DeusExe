@@ -54,6 +54,7 @@ END
 // remains consistent on all systems.
 IDI_ICON                ICON                    "DeusEx.ico"
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Dialog
@@ -77,49 +78,52 @@ BEGIN
     RTEXT           "Version",IDC_VERSION,246,294,80,8,0,WS_EX_TRANSPARENT | WS_EX_RIGHT
 END
 
-IDD_FIXAPP DIALOGEX 0, 0, 441, 254
+IDD_FIXAPP DIALOGEX 0, 0, 435, 314
 STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Configuration"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    CONTROL         "Use custom GUI scaling:",CHK_GUIFIX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,42,93,10
     CONTROL         "Raw input (disables mouse acceleration for camera)",CHK_NOMOUSEACCEL,
                     "Button",BS_AUTOCHECKBOX | BS_TOP | BS_MULTILINE | WS_TABSTOP,12,18,204,11
-    CONTROL         "Use single CPU",CHK_USESINGLECPU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,222,66,63,10
-    LTEXT           "Latency (40 default, try 60, 80, 100, etc.)",IDC_STATIC,222,18,144,8
+    CONTROL         "Widescreen cinematic subtitle fix",CHK_SUBTITLEFIX,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,30,120,10
+    CONTROL         "Use custom GUI scaling:",CHK_GUIFIX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,42,93,10
+    COMBOBOX        COMBO_GUISCALING,108,42,48,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
     EDITTEXT        TXT_LATENCY,366,18,36,12,ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "Use DirectSound",CHK_DIRECTSOUND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,222,30,112,11
+    CONTROL         "Use single CPU",CHK_USESINGLECPU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,222,66,63,10
     COMBOBOX        COMBO_RENDERER,84,115,127,72,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
     EDITTEXT        TXT_FPSLIMIT,84,132,36,12,ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "16 bit color",RADIO_16BIT,"Button",BS_AUTORADIOBUTTON | WS_GROUP,228,120,55,11
     CONTROL         "32 bit color",RADIO_32BIT,"Button",BS_AUTORADIOBUTTON,228,132,98,11
     CONTROL         "Detail textures",CHK_DETAILTEX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,306,120,112,11
-    CONTROL         "Common:",RADIO_RESCOMMON,"Button",BS_AUTORADIOBUTTON | WS_GROUP,18,168,47,11
-    COMBOBOX        COMBO_RESOLUTION,66,168,120,95,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Custom:",RADIO_RESCUSTOM,"Button",BS_AUTORADIOBUTTON,18,186,41,11
-    EDITTEXT        TXT_RESX,66,186,36,12,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        TXT_RESY,118,186,36,12,ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL         "Full-screen mode",CHK_FULLSCREEN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,18,204,112,11
+    CONTROL         "Windowed",RADIO_VPWINDOWED,"Button",BS_AUTORADIOBUTTON | WS_GROUP,18,168,47,11
+    CONTROL         "Fullscreen",RADIO_VPFULLSCREEN,"Button",BS_AUTORADIOBUTTON,18,180,47,11
+    CONTROL         "Borderless fullscreen window",RADIO_VPBORDERLESS,"Button",BS_AUTORADIOBUTTON,18,192,114,11
     CONTROL         "Default ",RADIO_FOVDEFAULT,"Button",BS_AUTORADIOBUTTON | WS_GROUP,228,168,84,11
     CONTROL         "Automatic (updates FOV on window resize)",RADIO_FOVAUTO,
                     "Button",BS_AUTORADIOBUTTON,228,180,180,11
     CONTROL         "Custom:",RADIO_FOVCUSTOM,"Button",BS_AUTORADIOBUTTON,228,192,42,11
     EDITTEXT        TXT_FOV,276,192,54,12,ES_AUTOHSCROLL | ES_NUMBER
-    DEFPUSHBUTTON   "OK",IDOK,330,234,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,384,234,50,14
-    GROUPBOX        "Field of view",IDC_STATIC,222,156,204,66
-    GROUPBOX        "Resolution",IDC_STATIC,12,156,204,66
-    GROUPBOX        "Video options",IDC_STATIC,6,102,426,126
+    CONTROL         "Common:",RADIO_RESCOMMON,"Button",BS_AUTORADIOBUTTON | WS_GROUP,18,228,47,11
+    COMBOBOX        COMBO_RESOLUTION,66,229,120,95,CBS_DROPDOWN | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Custom:",RADIO_RESCUSTOM,"Button",BS_AUTORADIOBUTTON,18,246,41,11
+    EDITTEXT        TXT_RESX,66,246,36,12,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        TXT_RESY,118,246,36,12,ES_AUTOHSCROLL | ES_NUMBER
+    DEFPUSHBUTTON   "OK",IDOK,324,294,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,378,294,50,14
+    LTEXT           "Latency (40 default, try 60, 80, 100, etc.)",IDC_STATIC,222,18,144,8
+    GROUPBOX        "Field of view",IDC_STATIC,222,156,204,54
+    GROUPBOX        "Resolution",IDC_STATIC,12,216,204,66
+    GROUPBOX        "Video options",IDC_STATIC,6,102,426,186
     LTEXT           "Renderer",IDC_STATIC,12,114,30,9
-    LTEXT           "x",IDC_STATIC,108,190,8,8
+    LTEXT           "x",IDC_STATIC,108,246,8,8
     GROUPBOX        "Quality",IDC_STATIC,222,108,204,42
     LTEXT           "FPS limit (0 for off)",IDC_STATIC,12,132,72,9
     GROUPBOX        "Audio",IDC_STATIC,216,6,216,42
     GROUPBOX        "UI",IDC_STATIC,6,6,204,90
     GROUPBOX        "Misc.",IDC_STATIC,216,54,216,42
-    COMBOBOX        COMBO_GUISCALING,108,42,48,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Widescreen cinematic subtitle fix",CHK_SUBTITLEFIX,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,30,120,10
+    GROUPBOX        "Viewport",IDC_STATIC,12,156,204,54
 END
 
 IDD_DATADIRS DIALOGEX 0, 0, 340, 297
@@ -142,8 +146,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 7,0,0,0
- PRODUCTVERSION 7,0,0,0
+ FILEVERSION 8,0,0,0
+ PRODUCTVERSION 8,0,0,0
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -160,12 +164,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Marijn Kentie"
             VALUE "FileDescription", "Deus Ex"
-            VALUE "FileVersion", "7.0.0.0"
+            VALUE "FileVersion", "8.0.0.0"
             VALUE "InternalName", "DeusExe"
-            VALUE "LegalCopyright", "Copyright (C) 2015 Marijn Kentie"
+            VALUE "LegalCopyright", "Copyright (C) 2016 Marijn Kentie"
             VALUE "OriginalFilename", "DeusEx.exe"
             VALUE "ProductName", "Deus Exe"
-            VALUE "ProductVersion", "7.0.0.0"
+            VALUE "ProductVersion", "8.0.0.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -193,9 +197,9 @@ BEGIN
     IDD_FIXAPP, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 439
+        RIGHTMARGIN, 433
         TOPMARGIN, 7
-        BOTTOMMARGIN, 245
+        BOTTOMMARGIN, 305
     END
 
     IDD_DATADIRS, DIALOG
@@ -215,6 +219,7 @@ END
 //
 
 IDC_BITMAP1             BITMAP                  "deusex.bmp"
+
 #endif    // Dutch (Netherlands) resources
 /////////////////////////////////////////////////////////////////////////////
 

@@ -14,7 +14,7 @@
     <ProjectGuid>{36141612-AE9B-4E98-B565-A4A313847438}</ProjectGuid>
     <RootNamespace>DeusExe</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.10586.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -76,14 +76,16 @@
       </PrecompiledHeader>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
-      <CompileAsWinRT>true</CompileAsWinRT>
       <ForcedUsingFiles>$(VCInstallDir)lib\store\references\platform.winmd;%(ForcedUsingFiles)</ForcedUsingFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
+      <MinimumRequiredVersion>
+      </MinimumRequiredVersion>
     </Link>
+    <Manifest />
     <Manifest>
-      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -125,13 +127,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DataDirDialog.h" />
-    <ClInclude Include="Detoureds.h" />
-    <ClInclude Include="FileManagerDeusExe.h" />
     <ClInclude Include="ExecHook.h" />
+    <ClInclude Include="FileManagerDeusExe.h" />
     <ClInclude Include="FancyTreeView.h" />
     <ClInclude Include="FixApp.h" />
     <ClInclude Include="FreeSpaceFix.h" />
     <ClInclude Include="GUIScalingFix.h" />
+    <ClInclude Include="Launcher.h" />
     <ClInclude Include="LauncherDialog.h" />
     <ClInclude Include="Misc.h" />
     <ClInclude Include="NativeHooks.h" />

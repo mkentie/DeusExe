@@ -72,6 +72,7 @@ INT_PTR CALLBACK CLauncherDialog::LauncherDialogProc(HWND hwndDlg,UINT uMsg,WPAR
             {
             case BN_CLICKED:
             case IDC_PLAY:
+                pThis->m_hMonitor = MonitorFromWindow(hwndDlg, MONITOR_DEFAULTTONEAREST); //Track on which monitor we were closed, so we can move game to there
                 EndDialog(hwndDlg, 1);
                 return TRUE;
             case IDC_EXIT:

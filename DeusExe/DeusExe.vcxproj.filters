@@ -80,9 +80,6 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="detoureds.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="datadirdialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -90,9 +87,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="exechook.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FancyTreeView.h">
@@ -112,6 +106,12 @@
     </ClInclude>
     <ClInclude Include="GUIScalingFix.h">
       <Filter>Fixes\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Launcher.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExecHook.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

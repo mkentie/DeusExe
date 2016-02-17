@@ -5,8 +5,6 @@
 #include "SubTitleFix.h"
 #include "GUIScalingFix.h"
 
-
-
 CNativeHooks* CNativeHooks::sm_pSingleton;
 
 CNativeHooks::CNativeHooks(const wchar_t* const pszIniSection)

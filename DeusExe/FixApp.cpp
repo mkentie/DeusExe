@@ -25,37 +25,44 @@ void CFixApp::ReadSettings()
     assert(GConfig);
 
     //Full-screen
-    BOOL bFullScreen = TRUE;
-    GConfig->GetBool(L"WinDrv.WindowsClient", L"StartupFullScreen", bFullScreen);
-    CheckDlgButton(m_hWnd, CHK_FULLSCREEN, bFullScreen);
+    UBOOL bBorderless = FALSE;
+    GConfig->GetBool(PROJECTNAME, L"BorderlessFullscreenWindow", bBorderless);
+
+    UBOOL bFullscreen = FALSE;
+    if (!bBorderless)
+    {
+        GConfig->GetBool(L"WinDrv.WindowsClient", L"StartupFullscreen", bFullscreen);
+    }
+
+    CheckRadioButton(m_hWnd, RADIO_VPWINDOWED, RADIO_VPBORDERLESS, bBorderless ? RADIO_VPBORDERLESS : bFullscreen ? RADIO_VPFULLSCREEN : RADIO_VPWINDOWED);
 
     //Resolution
     int iResX = 1024;
-    GConfig->GetInt(L"WinDrv.WindowsClient", bFullScreen ? L"FullscreenViewportX" : L"WindowedViewportX", iResX);
+    GConfig->GetInt(L"WinDrv.WindowsClient", bFullscreen ? L"FullscreenViewportX" : L"WindowedViewportX", iResX);
     int iResY = 768;
-    GConfig->GetInt(L"WinDrv.WindowsClient", bFullScreen ? L"FullscreenViewportY" : L"WindowedViewportY", iResY);
+    GConfig->GetInt(L"WinDrv.WindowsClient", bFullscreen ? L"FullscreenViewportY" : L"WindowedViewportY", iResY);
 
     wchar_t szBuffer[20];
     _snwprintf_s(szBuffer, _TRUNCATE, L"%dx%d", iResX, iResY);
     const int iComboRes = ComboBox_FindStringExact(m_hWndCBResolutions, -1, szBuffer);
 
-    if(iComboRes != CB_ERR) //Can fail if res not supported
+    const bool bStandardRes = iComboRes != CB_ERR;
+
+    if(bStandardRes) //Can fail if res not supported
     {
         ComboBox_SetCurSel(m_hWndCBResolutions, iComboRes);
-        EnableWindow(m_hWndCBResolutions, TRUE);
-        EnableWindow(m_hWndTxtResX, FALSE);
-        EnableWindow(m_hWndTxtResY, FALSE);
         CheckRadioButton(m_hWnd, RADIO_RESCOMMON, RADIO_RESCUSTOM, RADIO_RESCOMMON);
     }
     else
     {
         CheckRadioButton(m_hWnd,RADIO_RESCOMMON,RADIO_RESCUSTOM,RADIO_RESCUSTOM);
-        EnableWindow(m_hWndCBResolutions, FALSE);
-        EnableWindow(m_hWndTxtResX, TRUE);
-        EnableWindow(m_hWndTxtResY, TRUE);
-        SetDlgItemInt(m_hWnd,TXT_RESX,iResX,FALSE);
-        SetDlgItemInt(m_hWnd,TXT_RESY,iResY,FALSE);
     }
+
+    SetDlgItemInt(m_hWnd, TXT_RESX, iResX, FALSE);
+    SetDlgItemInt(m_hWnd, TXT_RESY, iResY, FALSE);
+
+    EnableDisableResSettings(!bBorderless, bStandardRes);
+
 
     //Bit depth
     int iBitDepth = sm_iBPP_32;
@@ -211,6 +218,15 @@ void CFixApp::PopulateDialog()
 
 }
 
+void CFixApp::EnableDisableResSettings(const bool bChangesAllowed, const bool bCommon) const
+{
+    EnableWindow(m_hWndRadioResCommon, bChangesAllowed);
+    EnableWindow(m_hWndRadioResCustom, bChangesAllowed);
+    EnableWindow(m_hWndCBResolutions, bChangesAllowed && bCommon);
+    EnableWindow(m_hWndTxtResX, bChangesAllowed && !bCommon);
+    EnableWindow(m_hWndTxtResY, bChangesAllowed && !bCommon);
+}
+
 void CFixApp::ApplySettings() const
 {
     assert(GConfig);
@@ -276,6 +292,7 @@ void CFixApp::ApplySettings() const
     //Audio latency
     GConfig->SetInt(L"Galaxy.GalaxyAudioSubsystem", L"Latency", GetDlgItemInt(m_hWnd, TXT_LATENCY, nullptr, FALSE));
     //Full-screen
+    GConfig->SetBool(PROJECTNAME, L"BorderlessFullscreenWindow", IsDlgButtonChecked(m_hWnd, RADIO_VPBORDERLESS) != 0);
     GConfig->SetBool(L"WinDrv.WindowsClient",L"StartupFullSCreen",IsDlgButtonChecked(m_hWnd,CHK_FULLSCREEN)!=0);
     //FPS Limit
     GConfig->SetInt(PROJECTNAME, L"FPSLimit", GetDlgItemInt(m_hWnd, TXT_FPSLIMIT, nullptr, FALSE));
@@ -303,7 +320,9 @@ INT_PTR CALLBACK CFixApp::FixAppDialogProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,
             pThis->m_hWnd = hwndDlg;
             pThis->m_hWndCBGUIScales = GetDlgItem(hwndDlg, COMBO_GUISCALING);
             pThis->m_hWndCBRenderers = GetDlgItem(hwndDlg, COMBO_RENDERER);
+            pThis->m_hWndRadioResCommon = GetDlgItem(hwndDlg, RADIO_RESCOMMON);
             pThis->m_hWndCBResolutions = GetDlgItem(hwndDlg, COMBO_RESOLUTION);
+            pThis->m_hWndRadioResCustom = GetDlgItem(hwndDlg, RADIO_RESCUSTOM);
             pThis->m_hWndTxtResX = GetDlgItem(hwndDlg, TXT_RESX);
             pThis->m_hWndTxtResY = GetDlgItem(hwndDlg, TXT_RESY);
             pThis->m_hWndTxtFOV = GetDlgItem(hwndDlg, TXT_FOV);
@@ -323,10 +342,8 @@ INT_PTR CALLBACK CFixApp::FixAppDialogProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,
             case RADIO_RESCOMMON:
             case RADIO_RESCUSTOM:
             {
-                const bool bCustom = LOWORD(wParam) == RADIO_RESCUSTOM;
-                EnableWindow(pThis->m_hWndTxtResX, bCustom);
-                EnableWindow(pThis->m_hWndTxtResY, bCustom);
-                EnableWindow(pThis->m_hWndCBResolutions, !bCustom);
+                const bool bCommon = LOWORD(wParam) == RADIO_RESCOMMON;
+                pThis->EnableDisableResSettings(IsDlgButtonChecked(pThis->m_hWnd, RADIO_VPBORDERLESS)==0, bCommon);
             }
             return TRUE;
 
@@ -336,6 +353,15 @@ INT_PTR CALLBACK CFixApp::FixAppDialogProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,
             {
                 const bool bCustom = LOWORD(wParam) == RADIO_FOVCUSTOM;
                 EnableWindow(pThis->m_hWndTxtFOV, bCustom);
+            }
+            return TRUE;
+
+            case RADIO_VPFULLSCREEN:
+            case RADIO_VPWINDOWED:
+            case RADIO_VPBORDERLESS:
+            {
+                const bool bBorderless = LOWORD(wParam) == RADIO_VPBORDERLESS;
+                pThis->EnableDisableResSettings(!bBorderless, IsDlgButtonChecked(pThis->m_hWnd, RADIO_RESCOMMON)!=0);
             }
             return TRUE;
 

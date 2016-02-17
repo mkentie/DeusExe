@@ -29,6 +29,7 @@
 #define IDC_VERSION                     1010
 #define RADIO_RESCUSTOM                 1011
 #define TXT_GAMEDIR                     1012
+#define RADIO_VPWINDOWED                1012
 #define COMBO_RENDERER                  1013
 #define IDC_DDLIST                      1013
 #define TXT_RESY                        1014
@@ -38,6 +39,7 @@
 #define TXT_FOV                         1018
 #define CHK_DETAILTEX2                  1019
 #define CHK_FULLSCREEN                  1019
+#define RADIO_VPFULLSCREEN              1019
 #define TXT_LATENCY                     1020
 #define CHK_DIRECTSOUND                 1021
 #define IDC_UP                          1021
@@ -49,6 +51,8 @@
 #define IDC_INIFILES2                   1023
 #define RADIO_FOVAUTO                   1023
 #define RADIO_FOVCUSTOM                 1024
+#define RADIO_RESCOMMON4                1025
+#define RADIO_VPBORDERLESS              1025
 #define CHK_NOMOUSEACCEL                1028
 #define STATIC_GUI                      1029
 #define TXT_LATENCY2                    1030

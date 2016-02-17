@@ -13,4 +13,8 @@ namespace Misc
     float GetDefaultFOV();
 
     float CalcFOV(const size_t iResX, const size_t iResY);
+
+    void CenterWindowOnMonitor(const HWND hWnd, const HMONITOR hMonitor);
+
+    void SetBorderlessFullscreen(const HWND hWnd, const bool bEnable);
 };

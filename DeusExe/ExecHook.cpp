@@ -2,7 +2,6 @@
 #include "ExecHook.h"
 
 FExecHook::FExecHook()
-:m_pPreferences(nullptr)
 {
 
 }

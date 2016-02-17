@@ -12,7 +12,6 @@ decltype(CDataDirDialog::sm_SupportedExtensions) CDataDirDialog::sm_SupportedExt
 };
 
 CDataDirDialog::CDataDirDialog()
-:m_bAddTopLevelDirsOnly(true)
 {
 
 }

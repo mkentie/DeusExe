@@ -10,10 +10,10 @@ public:
     explicit FExecHook();
     ~FExecHook();
 private:
-    WConfigProperties* m_pPreferences; //Cleaned up by engine
+    WConfigProperties* m_pPreferences = nullptr; //Cleaned up by engine
 
 //From FExec
-private:
+protected:
     UBOOL Exec( const TCHAR* Cmd, FOutputDevice& Ar );
 
 //From FNotifyHook
