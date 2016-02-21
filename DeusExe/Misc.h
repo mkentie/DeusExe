@@ -16,5 +16,6 @@ namespace Misc
 
     void CenterWindowOnMonitor(const HWND hWnd, const HMONITOR hMonitor);
 
-    void SetBorderlessFullscreen(const HWND hWnd, const bool bEnable);
+    enum class BorderlessFullscreenMode { NONE, CURRENT_MONITOR, ALL_MONITORS };
+    void SetBorderlessFullscreen(const HWND hWnd, const BorderlessFullscreenMode Mode);
 };

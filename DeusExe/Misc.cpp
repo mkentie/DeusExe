@@ -104,26 +104,44 @@ void Misc::CenterWindowOnMonitor(const HWND hWnd, const HMONITOR hMonitor)
 #endif
 }
 
-void Misc::SetBorderlessFullscreen(const HWND hWnd, const bool bEnable)
+void Misc::SetBorderlessFullscreen(const HWND hWnd, const BorderlessFullscreenMode Mode)
 {
     assert(hWnd);
 
     LONG_PTR Style = GetWindowLongPtr(hWnd, GWL_STYLE);
 
-    if (bEnable)
+    if (Mode != BorderlessFullscreenMode::NONE)
     {
-        const HMONITOR hM = MonitorFromWindow(hWnd, 0);
-
-        MONITORINFO mi;
-        mi.cbSize = sizeof(mi);
-        GetMonitorInfo(hM, &mi);
-
         Style &= ~(WS_CAPTION | WS_THICKFRAME);
         SetWindowLongPtr(hWnd, GWL_STYLE, Style);
 
-        const int iX = mi.rcMonitor.right - mi.rcMonitor.left;
-        const int iY = mi.rcMonitor.bottom - mi.rcMonitor.top;
-        SetWindowPos(hWnd, NULL, mi.rcMonitor.left, mi.rcMonitor.top, iX, iY, SWP_FRAMECHANGED);
+        int iX;
+        int iY;
+        int iW;
+        int iH;
+
+        if (Mode == BorderlessFullscreenMode::CURRENT_MONITOR)
+        {
+            const HMONITOR hM = MonitorFromWindow(hWnd, 0);
+
+            MONITORINFO mi;
+            mi.cbSize = sizeof(mi);
+            GetMonitorInfo(hM, &mi);
+
+            iX = mi.rcMonitor.left;
+            iY = mi.rcMonitor.top;
+            iW = mi.rcMonitor.right - mi.rcMonitor.left;
+            iH = mi.rcMonitor.bottom - mi.rcMonitor.top;
+        }
+        else
+        {
+            iX = GetSystemMetrics(SM_XVIRTUALSCREEN);
+            iY = GetSystemMetrics(SM_YVIRTUALSCREEN);
+            iW = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+            iH = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+        }
+
+        SetWindowPos(hWnd, NULL, iX, iY, iW, iH, SWP_FRAMECHANGED);
     }
     else
     {

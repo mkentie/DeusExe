@@ -124,6 +124,7 @@ BEGIN
     GROUPBOX        "UI",IDC_STATIC,6,6,204,90
     GROUPBOX        "Misc.",IDC_STATIC,216,54,216,42
     GROUPBOX        "Viewport",IDC_STATIC,12,156,204,54
+    CONTROL         "Span all monitors",CHK_BORDERLESSALLMONITORS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,132,192,78,11
 END
 
 IDD_DATADIRS DIALOGEX 0, 0, 340, 297
@@ -146,8 +147,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 8,0,0,0
- PRODUCTVERSION 8,0,0,0
+ FILEVERSION 8,1,0,0
+ PRODUCTVERSION 8,1,0,0
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -164,12 +165,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Marijn Kentie"
             VALUE "FileDescription", "Deus Ex"
-            VALUE "FileVersion", "8.0.0.0"
+            VALUE "FileVersion", "8.1.0.0"
             VALUE "InternalName", "DeusExe"
             VALUE "LegalCopyright", "Copyright (C) 2016 Marijn Kentie"
             VALUE "OriginalFilename", "DeusEx.exe"
             VALUE "ProductName", "Deus Exe"
-            VALUE "ProductVersion", "8.0.0.0"
+            VALUE "ProductVersion", "8.1.0.0"
         END
     END
     BLOCK "VarFileInfo"

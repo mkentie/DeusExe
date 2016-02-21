@@ -177,8 +177,7 @@ CLauncher::CLauncher()
 
         if (m_bBorderlessFullscreenWindow)
         {
-            Misc::SetBorderlessFullscreen(m_hWnd, true);
-            m_bInBorderlessFullscreenWindow = true;
+            ToggleBorderlessWindowedFullscreen();
         }
 
         //Initialize raw input
@@ -270,6 +269,12 @@ void CLauncher::MainLoop(UEngine* const pEngine)
 
             RECT rClientArea;
             GetClientRect(m_hWnd, &rClientArea);
+            std::array<POINT, 2> ClientPoints = { { {rClientArea.left, rClientArea.top}, {rClientArea.right, rClientArea.bottom} } };
+            MapWindowPoints(m_hWnd, NULL, ClientPoints.data(), ClientPoints.size());
+            const RECT rClientScreen = { ClientPoints[0].x, ClientPoints[0].y, ClientPoints[1].x, ClientPoints[1].y };
+
+            RECT rr;
+            GetWindowRect(m_hWnd, &rr);
 
             //PeekMessage() doesn't get WM_SIZE
             //Default/desired FOV check is so we don't change FOV while zoomed in
@@ -334,11 +339,11 @@ void CLauncher::MainLoop(UEngine* const pEngine)
                     ClientToScreen(m_hWnd, &p);
                     SetCursorPos(p.x, p.y);
                 }
-                ClipCursor(&rClientArea); //Fixed being able to move cursor outside of fullscreen game on dual monitor systems
+                ClipCursor(&rClientScreen); //Fixed being able to move cursor outside of fullscreen game on dual monitor systems
             }
             m_bPrevInMenu = bInMenu;
 
-            const bool bMouseInClientRect = ScreenToClient(m_hWnd, &CursorPos) && PtInRect(&rClientArea, CursorPos); //This makes sure resize cursor isn't hidden
+            const bool bMouseInClientRect = PtInRect(&rClientScreen, CursorPos)!=0; //This makes sure resize cursor isn't hidden
             const bool bCaptured = GetCapture() == m_hWnd;
             if (bMouseInClientRect && (bMouseOverWindow || bCaptured)) //Want to show cursor when over preferences window when we don't have focus, but not when it's under the window if we do
             {
@@ -374,6 +379,16 @@ void CLauncher::MainLoop(UEngine* const pEngine)
                     bSkipMessage = true;
                 }
                 break;
+
+            case WM_KEYDOWN:
+            case WM_SYSKEYDOWN:
+                if (m_bBorderlessFullscreenWindow && Msg.wParam == VK_RETURN && (HIWORD(Msg.lParam) & KF_ALTDOWN)) //User hits alt+enter
+                {
+                    ToggleBorderlessWindowedFullscreen();
+                    bSkipMessage = true;
+                }
+                break;
+
 
             case WM_INPUT:
             {
@@ -432,14 +447,21 @@ void CLauncher::MainLoop(UEngine* const pEngine)
 void CLauncher::LoadSettings()
 {
     assert(GConfig);
-    int iFPSLimit;
+    int iFPSLimit = static_cast<int>(m_fFPSLimit);
     GConfig->GetInt(PROJECTNAME, L"FPSLimit", iFPSLimit);
     m_fFPSLimit = static_cast<float>(iFPSLimit);
 
     GConfig->GetBool(PROJECTNAME, L"RawInput", m_bRawInput);
     GConfig->GetBool(PROJECTNAME, L"UseAutoFOV", m_bAutoFov);
     GConfig->GetBool(PROJECTNAME, L"BorderlessFullscreenWindow", m_bBorderlessFullscreenWindow);
+    GConfig->GetBool(PROJECTNAME, L"BorderlessFullscreenWindowAllMonitors", m_bBorderlessFullscreenWindowUseAllMonitors);
     GConfig->GetBool(PROJECTNAME, L"UseSingleCPU", m_bUseSingleCPU);
+}
+
+void CLauncher::ToggleBorderlessWindowedFullscreen()
+{
+    Misc::SetBorderlessFullscreen(m_hWnd, m_bInBorderlessFullscreenWindow ? Misc::BorderlessFullscreenMode::NONE : m_bBorderlessFullscreenWindowUseAllMonitors ? Misc::BorderlessFullscreenMode::ALL_MONITORS : Misc::BorderlessFullscreenMode::CURRENT_MONITOR);
+    m_bInBorderlessFullscreenWindow = !m_bInBorderlessFullscreenWindow;
 }
 
 UBOOL CLauncher::Exec(const TCHAR * Cmd, FOutputDevice & Ar)
@@ -449,8 +471,7 @@ UBOOL CLauncher::Exec(const TCHAR * Cmd, FOutputDevice & Ar)
         assert(m_pViewPort);
         if (m_bBorderlessFullscreenWindow) //In borderless mode, prevent switch to 'real' fullscreen
         {
-            Misc::SetBorderlessFullscreen(m_hWnd, !m_bInBorderlessFullscreenWindow);
-            m_bInBorderlessFullscreenWindow = !m_bInBorderlessFullscreenWindow;
+            ToggleBorderlessWindowedFullscreen();
 
             return TRUE;
         }

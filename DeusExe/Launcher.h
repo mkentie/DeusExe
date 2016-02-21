@@ -12,6 +12,7 @@ private:
     void ApplyAutoFOV(const size_t iSizeX, const size_t iSizeY);
     void MainLoop(UEngine * const pEngine);
     void LoadSettings();
+    void ToggleBorderlessWindowedFullscreen();
 
     HWND m_hWnd = NULL;
 
@@ -23,11 +24,12 @@ private:
     bool m_bInBorderlessFullscreenWindow = false;
 
     //Settings
-    float m_fFPSLimit; //Because GetMaxTickRate() is float
-    UBOOL m_bRawInput;
-    UBOOL m_bAutoFov;
-    UBOOL m_bBorderlessFullscreenWindow;
-    UBOOL m_bUseSingleCPU;
+    float m_fFPSLimit = 120.0f; //Because GetMaxTickRate() is float
+    UBOOL m_bRawInput = TRUE;
+    UBOOL m_bAutoFov = TRUE;
+    UBOOL m_bBorderlessFullscreenWindow = TRUE;
+    UBOOL m_bBorderlessFullscreenWindowUseAllMonitors = FALSE;
+    UBOOL m_bUseSingleCPU = FALSE;
 
 //From FExec
 private:

@@ -51,8 +51,9 @@
 #define IDC_INIFILES2                   1023
 #define RADIO_FOVAUTO                   1023
 #define RADIO_FOVCUSTOM                 1024
-#define RADIO_RESCOMMON4                1025
 #define RADIO_VPBORDERLESS              1025
+#define CHK_DETAILTEX3                  1026
+#define CHK_BORDERLESSALLMONITORS       1026
 #define CHK_NOMOUSEACCEL                1028
 #define STATIC_GUI                      1029
 #define TXT_LATENCY2                    1030

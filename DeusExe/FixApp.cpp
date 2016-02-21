@@ -25,7 +25,7 @@ void CFixApp::ReadSettings()
     assert(GConfig);
 
     //Full-screen
-    UBOOL bBorderless = FALSE;
+    UBOOL bBorderless = TRUE;
     GConfig->GetBool(PROJECTNAME, L"BorderlessFullscreenWindow", bBorderless);
 
     UBOOL bFullscreen = FALSE;
@@ -35,6 +35,11 @@ void CFixApp::ReadSettings()
     }
 
     CheckRadioButton(m_hWnd, RADIO_VPWINDOWED, RADIO_VPBORDERLESS, bBorderless ? RADIO_VPBORDERLESS : bFullscreen ? RADIO_VPFULLSCREEN : RADIO_VPWINDOWED);
+    EnableWindow(GetDlgItem(m_hWnd, CHK_BORDERLESSALLMONITORS), bBorderless);
+
+    UBOOL bBorderlessAllMonitors = FALSE;
+    GConfig->GetBool(PROJECTNAME, L"BorderlessFullscreenWindowAllMonitors", bBorderlessAllMonitors);
+    CheckDlgButton(m_hWnd, CHK_BORDERLESSALLMONITORS, bBorderlessAllMonitors);
 
     //Resolution
     int iResX = 1024;
@@ -293,6 +298,7 @@ void CFixApp::ApplySettings() const
     GConfig->SetInt(L"Galaxy.GalaxyAudioSubsystem", L"Latency", GetDlgItemInt(m_hWnd, TXT_LATENCY, nullptr, FALSE));
     //Full-screen
     GConfig->SetBool(PROJECTNAME, L"BorderlessFullscreenWindow", IsDlgButtonChecked(m_hWnd, RADIO_VPBORDERLESS) != 0);
+    GConfig->SetBool(PROJECTNAME, L"BorderlessFullscreenWindowAllMonitors", IsDlgButtonChecked(m_hWnd, CHK_BORDERLESSALLMONITORS) != 0);
     GConfig->SetBool(L"WinDrv.WindowsClient",L"StartupFullSCreen",IsDlgButtonChecked(m_hWnd,CHK_FULLSCREEN)!=0);
     //FPS Limit
     GConfig->SetInt(PROJECTNAME, L"FPSLimit", GetDlgItemInt(m_hWnd, TXT_FPSLIMIT, nullptr, FALSE));
@@ -362,6 +368,7 @@ INT_PTR CALLBACK CFixApp::FixAppDialogProc(HWND hwndDlg,UINT uMsg,WPARAM wParam,
             {
                 const bool bBorderless = LOWORD(wParam) == RADIO_VPBORDERLESS;
                 pThis->EnableDisableResSettings(!bBorderless, IsDlgButtonChecked(pThis->m_hWnd, RADIO_RESCOMMON)!=0);
+                EnableWindow(GetDlgItem(pThis->m_hWnd, CHK_BORDERLESSALLMONITORS), bBorderless);
             }
             return TRUE;
 
